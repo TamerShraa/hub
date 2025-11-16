@@ -1,10 +1,12 @@
 {
   "name": "sstda-hub",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Internal accounting and commission management tool for Smart Summit TDA",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "test": "node --test",
+    "backup": "node scripts/dailyBackup.js"
   },
   "keywords": [],
   "author": "",

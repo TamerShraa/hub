@@ -1,60 +1,164 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>SSTDA Finance Hub</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link
-    href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600&display=swap"
-    rel="stylesheet"
-  />
-  <link rel="stylesheet" href="/styles.css" />
-</head>
-<body>
-  <div id="app">
-    <div class="auth-panel" id="login-panel">
-      <div class="brand-lockup">
-        <div class="badge">Smart Summit TDA</div>
-        <h1>SSTDA Finance Hub</h1>
-        <p class="subtitle">Unified revenues, expenses, and profit sharing.</p>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SSTDA Finance Hub</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div id="app">
+      <div class="auth-panel" id="login-panel">
+        <div class="brand-lockup">
+          <div class="badge">Smart Summit TDA</div>
+          <h1>Finance Hub</h1>
+          <p class="subtitle">Unified revenues, expenses & payouts.</p>
+        </div>
+        <form id="login-form">
+          <label>Username<input type="text" name="username" required /></label>
+          <label>Password<input type="password" name="password" required /></label>
+          <button type="submit" class="primary">Sign in</button>
+        </form>
+        <div id="login-error" class="error"></div>
       </div>
-      <form id="login-form">
-        <label>Username <input type="text" name="username" required /></label>
-        <label>Password <input type="password" name="password" required /></label>
-        <button type="submit">Sign in</button>
-      </form>
-      <p class="hint">Default password for all seeded users is <strong>changeme</strong>. Please update it after first login.</p>
-      <div id="login-error" class="error"></div>
-    </div>
 
-    <div id="dashboard" class="hidden">
-      <header>
-        <div>
-          <p class="eyebrow">Operations console</p>
-          <h1>Smart Summit TDA Finance Hub</h1>
-          <p id="welcome"></p>
-        </div>
-        <div class="header-actions">
-          <button id="nav-home" class="nav-button">Pages</button>
-          <button id="nav-my-work" class="nav-button">My Work</button>
-          <button id="nav-settings" class="nav-button">Settings</button>
-          <button id="logout-btn" class="danger">Logout</button>
-        </div>
-      </header>
-      <main>
-        <section id="pages-section">
-          <h2>Pages overview</h2>
-          <div id="page-cards" class="grid"></div>
-        </section>
+      <div class="auth-panel hidden" id="force-password-panel">
+        <h2>Set a new password</h2>
+        <p>For security reasons please update your default password.</p>
+        <form id="force-password-form">
+          <label>New password<input type="password" name="newPassword" minlength="8" required /></label>
+          <label>Confirm password<input type="password" name="confirmPassword" minlength="8" required /></label>
+          <button type="submit" class="primary">Update password</button>
+        </form>
+        <div id="force-password-error" class="error"></div>
+      </div>
 
-        <section id="page-detail" class="hidden"></section>
-        <section id="my-work" class="hidden"></section>
-        <section id="settings" class="hidden"></section>
-      </main>
+      <div id="dashboard" class="hidden">
+        <header>
+          <div>
+            <p class="eyebrow">Operations console</p>
+            <h1>Smart Summit TDA Finance Hub</h1>
+            <p id="welcome"></p>
+          </div>
+          <div class="header-actions">
+            <button id="nav-home" class="nav-button">Pages</button>
+            <button id="nav-my-work" class="nav-button">My Work</button>
+            <button id="nav-payout" class="nav-button">Payout Summary</button>
+            <button id="nav-settings" class="nav-button">Settings</button>
+            <button id="logout-btn" class="danger">Logout</button>
+          </div>
+        </header>
+        <main>
+          <section id="global-dashboard" class="panel">
+            <div class="global-header">
+              <div>
+                <h2>Global dashboard</h2>
+                <p>Month-to-date pulse across all pages.</p>
+              </div>
+              <div class="chip-row">
+                <button class="chip" onclick="loadGlobalDashboard('thisWeek')">This week</button>
+                <button class="chip" onclick="loadGlobalDashboard('thisMonth')">This month</button>
+                <button class="chip" onclick="loadGlobalDashboard('lastMonth')">Last month</button>
+                <button id="global-refresh" class="secondary">Refresh</button>
+              </div>
+            </div>
+            <div class="summary-row">
+              <div class="mini-card"><span>Total income</span><strong id="global-income">0</strong></div>
+              <div class="mini-card"><span>Total expenses</span><strong id="global-expenses">0</strong></div>
+              <div class="mini-card"><span>Net profit</span><strong id="global-net">0</strong></div>
+            </div>
+            <div class="top-lists">
+              <div>
+                <h4>Top categories</h4>
+                <ul id="top-categories"></ul>
+              </div>
+              <div>
+                <h4>Top performers</h4>
+                <ul id="top-contributors"></ul>
+              </div>
+            </div>
+          </section>
+
+          <section id="pages-section">
+            <h2>Pages overview</h2>
+            <div id="page-cards" class="grid"></div>
+          </section>
+
+          <section id="page-detail" class="hidden"></section>
+
+          <section id="my-work" class="hidden"></section>
+
+          <section id="payout-summary" class="hidden">
+            <div class="panel">
+              <div class="section-header">
+                <div>
+                  <h2>Payout summary</h2>
+                  <p>Plan transfers by selecting a date range.</p>
+                </div>
+                <form id="payout-form" class="filters inline">
+                  <label>Start<input type="date" name="start" /></label>
+                  <label>End<input type="date" name="end" /></label>
+                  <button class="primary">Generate</button>
+                </form>
+              </div>
+              <table>
+                <thead>
+                  <tr>
+                    <th>Person</th>
+                    <th>Commissions</th>
+                    <th>Research share</th>
+                    <th>SSTDA share</th>
+                    <th>Total</th>
+                  </tr>
+                </thead>
+                <tbody id="payout-table-body"></tbody>
+              </table>
+            </div>
+          </section>
+
+          <section id="settings" class="hidden">
+            <div class="panel">
+              <h2>Settings</h2>
+              <form id="settings-form" class="settings-grid">
+                <label>Commission rate<input type="number" step="0.01" name="commissionRate" /></label>
+                <label>Research Sajedah<input type="number" step="0.01" name="researchManager" /></label>
+                <label>Research Tamer<input type="number" step="0.01" name="researchTamer" /></label>
+                <label>Research Majdi<input type="number" step="0.01" name="researchMajdi" /></label>
+                <label>Savings<input type="number" step="0.01" name="sstdaSavings" /></label>
+                <label>Majdi fee<input type="number" step="0.01" name="sstdaMajdiFee" /></label>
+                <label>Tamer fee<input type="number" step="0.01" name="sstdaTamerFee" /></label>
+                <label>Thabit share<input type="number" step="0.01" name="sstdaThabit" /></label>
+                <label>Tamer share<input type="number" step="0.01" name="sstdaTamerShare" /></label>
+                <label>Majdi share<input type="number" step="0.01" name="sstdaMajdiShare" /></label>
+                <label>Admin session (hrs)<input type="number" name="sessionAdminHours" /></label>
+                <label>Manager session (hrs)<input type="number" name="sessionManagerHours" /></label>
+                <label>Staff session (hrs)<input type="number" name="sessionStaffHours" /></label>
+                <button class="primary">Save settings</button>
+              </form>
+              <div class="settings-actions">
+                <div>
+                  <h3>Change password</h3>
+                  <form id="password-change-form" class="inline">
+                    <input type="password" name="currentPassword" placeholder="Current password" required />
+                    <input type="password" name="newPassword" placeholder="New password" minlength="8" required />
+                    <input type="password" name="confirmPassword" placeholder="Confirm" minlength="8" required />
+                    <button class="secondary">Update</button>
+                  </form>
+                </div>
+                <div>
+                  <h3>Backups</h3>
+                  <p>Download a full JSON snapshot.</p>
+                  <button id="backup-btn" class="secondary">Backup all data</button>
+                </div>
+              </div>
+            </div>
+          </section>
+        </main>
+      </div>
     </div>
-  </div>
-  <script src="/app.js"></script>
-</body>
+    <script src="/app.js"></script>
+  </body>
 </html>
