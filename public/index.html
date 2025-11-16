@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SSTDA Finance Hub</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600&display=swap"
+    rel="stylesheet"
+  />
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <div id="app">
+    <div class="auth-panel" id="login-panel">
+      <div class="brand-lockup">
+        <div class="badge">Smart Summit TDA</div>
+        <h1>SSTDA Finance Hub</h1>
+        <p class="subtitle">Unified revenues, expenses, and profit sharing.</p>
+      </div>
+      <form id="login-form">
+        <label>Username <input type="text" name="username" required /></label>
+        <label>Password <input type="password" name="password" required /></label>
+        <button type="submit">Sign in</button>
+      </form>
+      <p class="hint">Default password for all seeded users is <strong>changeme</strong>. Please update it after first login.</p>
+      <div id="login-error" class="error"></div>
+    </div>
+
+    <div id="dashboard" class="hidden">
+      <header>
+        <div>
+          <p class="eyebrow">Operations console</p>
+          <h1>Smart Summit TDA Finance Hub</h1>
+          <p id="welcome"></p>
+        </div>
+        <div class="header-actions">
+          <button id="nav-home" class="nav-button">Pages</button>
+          <button id="nav-my-work" class="nav-button">My Work</button>
+          <button id="nav-settings" class="nav-button">Settings</button>
+          <button id="logout-btn" class="danger">Logout</button>
+        </div>
+      </header>
+      <main>
+        <section id="pages-section">
+          <h2>Pages overview</h2>
+          <div id="page-cards" class="grid"></div>
+        </section>
+
+        <section id="page-detail" class="hidden"></section>
+        <section id="my-work" class="hidden"></section>
+        <section id="settings" class="hidden"></section>
+      </main>
+    </div>
+  </div>
+  <script src="/app.js"></script>
+</body>
+</html>
