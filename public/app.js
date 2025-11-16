@@ -13,6 +13,14 @@ const QUICK_PRESETS = [
   { key: 'lastMonth', label: 'Last month' }
 ];
 
+const savedTheme = (() => {
+  try {
+    return localStorage.getItem('sstda-theme');
+  } catch (err) {
+    return null;
+  }
+})();
+
 const state = {
   user: null,
   pages: [],
@@ -24,7 +32,8 @@ const state = {
   },
   globalPreset: 'thisMonth',
   payoutRange: {},
-  myWorkRange: {}
+  myWorkRange: {},
+  theme: savedTheme || 'dark'
 };
 
 async function request(url, options = {}) {
@@ -45,7 +54,21 @@ async function request(url, options = {}) {
   return data;
 }
 
+function escapeHtml(value) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 function init() {
+  applyTheme(state.theme);
+  const themeToggle = document.getElementById('theme-toggle');
+  if (themeToggle) {
+    themeToggle.addEventListener('click', toggleTheme);
+  }
   document.getElementById('login-form').addEventListener('submit', handleLogin);
   document.getElementById('force-password-form').addEventListener('submit', handleForcedPassword);
   document.getElementById('logout-btn').addEventListener('click', handleLogout);
@@ -69,6 +92,13 @@ function init() {
   document.getElementById('settings-form').addEventListener('submit', handleSettingsSave);
   document.getElementById('password-change-form').addEventListener('submit', handlePasswordChange);
   document.getElementById('backup-btn').addEventListener('click', triggerBackup);
+  document.getElementById('invoice-close').addEventListener('click', closeInvoiceModal);
+  document.getElementById('invoice-modal').addEventListener('click', (event) => {
+    if (event.target.id === 'invoice-modal') {
+      closeInvoiceModal();
+    }
+  });
+  document.getElementById('invoice-pdf').addEventListener('click', handleInvoicePdf);
   bootstrap();
 }
 
@@ -362,6 +392,9 @@ function renderPageDetail(data, filters = {}) {
   document.getElementById('jump-add-income').addEventListener('click', () => document.getElementById('income-form').scrollIntoView({ behavior: 'smooth' }));
   document.getElementById('jump-add-expense').addEventListener('click', () => document.getElementById('expense-form').scrollIntoView({ behavior: 'smooth' }));
   attachSorting();
+  detailSection.querySelectorAll('.invoice-btn').forEach((button) => {
+    button.addEventListener('click', () => openInvoice(button.dataset.type, button.dataset.id));
+  });
 }
 
 function renderIncomeTable(incomes, userMap) {
@@ -378,6 +411,7 @@ function renderIncomeTable(incomes, userMap) {
           <th data-table="incomes" data-column="netAmount">Net</th>
           <th>Client</th>
           <th>Brought by</th>
+          <th>Invoice</th>
         </tr>
       </thead>
       <tbody>
@@ -393,6 +427,12 @@ function renderIncomeTable(incomes, userMap) {
                 <td>${income.netAmount.toFixed(2)}</td>
                 <td>${income.clientName || '-'}</td>
                 <td>${income.broughtById ? userMap[income.broughtById] || '—' : '—'}</td>
+                <td>
+                  <div class="table-actions">
+                    <span class="invoice-pill">${income.invoiceNumber}</span>
+                    <button type="button" class="ghost-button invoice-btn" data-type="income" data-id="${income.id}">View</button>
+                  </div>
+                </td>
               </tr>
             `
           )
@@ -413,6 +453,7 @@ function renderExpenseTable(expenses) {
           <th data-table="expenses" data-column="amount">Amount</th>
           <th>Linked deal</th>
           <th>Notes</th>
+          <th>Invoice</th>
         </tr>
       </thead>
       <tbody>
@@ -425,6 +466,12 @@ function renderExpenseTable(expenses) {
                 <td>${expense.amount.toFixed(2)}</td>
                 <td>${expense.linkedIncomeId || '-'}</td>
                 <td>${expense.notes || '-'}</td>
+                <td>
+                  <div class="table-actions">
+                    <span class="invoice-pill">${expense.invoiceNumber}</span>
+                    <button type="button" class="ghost-button invoice-btn" data-type="expense" data-id="${expense.id}">View</button>
+                  </div>
+                </td>
               </tr>
             `
           )
@@ -519,6 +566,28 @@ function showFieldErrors(form, errors) {
     const key = el.dataset.for;
     el.textContent = errors[key] || '';
   });
+}
+
+function applyTheme(theme) {
+  state.theme = theme;
+  document.documentElement.dataset.theme = theme;
+  try {
+    localStorage.setItem('sstda-theme', theme);
+  } catch (err) {
+    // ignore storage errors
+  }
+  updateThemeToggleLabel();
+}
+
+function toggleTheme() {
+  const next = state.theme === 'dark' ? 'light' : 'dark';
+  applyTheme(next);
+}
+
+function updateThemeToggleLabel() {
+  const toggle = document.getElementById('theme-toggle');
+  if (!toggle) return;
+  toggle.textContent = state.theme === 'dark' ? '☀️ Light Mode' : '🌙 Dark Mode';
 }
 
 async function showMyWork() {
@@ -640,6 +709,63 @@ async function triggerBackup() {
   } catch (err) {
     alert(err.message);
   }
+}
+
+function closeInvoiceModal() {
+  const modal = document.getElementById('invoice-modal');
+  modal.classList.add('hidden');
+  document.getElementById('invoice-content').innerHTML = '';
+}
+
+function handleInvoicePdf() {
+  const button = document.getElementById('invoice-pdf');
+  const { type, id } = button.dataset;
+  if (!type || !id) return;
+  window.open(`/api/invoices/${type}/${id}/pdf`, '_blank');
+}
+
+async function openInvoice(type, id) {
+  try {
+    const invoice = await request(`/api/invoices/${type}/${id}`);
+    renderInvoicePreview(invoice);
+    const modal = document.getElementById('invoice-modal');
+    modal.classList.remove('hidden');
+  } catch (err) {
+    alert(err.message);
+  }
+}
+
+function renderInvoicePreview(invoice) {
+  const content = document.getElementById('invoice-content');
+  document.getElementById('invoice-pdf').dataset.type = invoice.type;
+  document.getElementById('invoice-pdf').dataset.id = invoice.id;
+  content.innerHTML = `
+    <div class="invoice-header">
+      <div>
+        <h4>${escapeHtml(invoice.company.name)}</h4>
+        <p>${escapeHtml(invoice.company.address)}</p>
+        <p>${escapeHtml(invoice.company.phone)} · ${escapeHtml(invoice.company.email)}</p>
+      </div>
+      <div class="text-right">
+        <div class="invoice-pill">${escapeHtml(invoice.invoiceNumber)}</div>
+        <p>${escapeHtml(invoice.date)}</p>
+      </div>
+    </div>
+    <div class="invoice-grid">
+      <div class="invoice-field"><span>Type</span><strong>${escapeHtml(invoice.typeLabel)}</strong></div>
+      <div class="invoice-field"><span>Page</span><strong>${escapeHtml(invoice.pageLabel)}</strong></div>
+      <div class="invoice-field"><span>Party</span><strong>${escapeHtml(invoice.partyName)}</strong></div>
+      <div class="invoice-field"><span>Category</span><strong>${escapeHtml(invoice.category)}</strong></div>
+      <div class="invoice-field"><span>Amount</span><strong>${invoice.amount.toFixed(2)} ${escapeHtml(invoice.currency)}</strong></div>
+      <div class="invoice-field"><span>Payment method</span><strong>${escapeHtml(invoice.paymentMethod)}</strong></div>
+      <div class="invoice-field"><span>Linked deal</span><strong>${escapeHtml(invoice.linkedIncomeId || '—')}</strong></div>
+    </div>
+    <div class="invoice-field">
+      <span>Notes</span>
+      <strong>${escapeHtml(invoice.notes || 'No additional notes recorded.')}</strong>
+    </div>
+    <p class="muted">This invoice was generated by Smart Summit Finance System – SSTDA.</p>
+  `;
 }
 
 async function showPayoutSummary() {

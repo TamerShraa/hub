@@ -67,5 +67,6 @@
       "manager": 4,
       "staff": 4
     }
-  }
+  },
+  "lastInvoiceNumber": 0
 }

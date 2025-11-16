@@ -18,6 +18,7 @@ const {
 } = require('../services/financeService');
 const { loadStore, mutateStore } = require('../data/store');
 const { createBackup, listBackups } = require('../services/backupService');
+const { getInvoiceData, streamInvoicePdf } = require('../services/invoiceService');
 
 function requireAuth(handler) {
   return async (req, res, ctx) => {
@@ -352,6 +353,34 @@ register(
       'Content-Disposition': `attachment; filename="${latest.filename}"`
     });
     stream.pipe(res);
+  })
+);
+
+register(
+  'GET',
+  '/api/invoices/:type/:id',
+  requireAuth((req, res, { params }) => {
+    try {
+      const invoice = getInvoiceData(params.type, params.id);
+      sendJson(res, 200, invoice);
+    } catch (err) {
+      const status = err.message === 'Record not found' ? 404 : 400;
+      sendJson(res, status, { message: err.message });
+    }
+  })
+);
+
+register(
+  'GET',
+  '/api/invoices/:type/:id/pdf',
+  requireAuth((req, res, { params }) => {
+    try {
+      const invoice = getInvoiceData(params.type, params.id);
+      streamInvoicePdf(res, invoice);
+    } catch (err) {
+      const status = err.message === 'Record not found' ? 404 : 400;
+      sendJson(res, status, { message: err.message });
+    }
   })
 );
 

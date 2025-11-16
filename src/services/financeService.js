@@ -1,4 +1,11 @@
-const { loadStore, mutateStore, generateIncomeId, generateExpenseId, generateDistributionId } = require('../data/store');
+const {
+  loadStore,
+  mutateStore,
+  generateIncomeId,
+  generateExpenseId,
+  generateDistributionId,
+  generateInvoiceNumber
+} = require('../data/store');
 const { PAGE_DEFINITIONS, ROLES } = require('../constants');
 const { toMs, inRange, resolvePreset } = require('../utils/date');
 
@@ -118,7 +125,8 @@ function createIncome(payload, user) {
     clientName: payload.clientName || '',
     broughtById: payload.broughtById || null,
     notes: payload.notes || '',
-    createdById: user.id
+    createdById: user.id,
+    invoiceNumber: generateInvoiceNumber(payload.date)
   };
   mutateStore((state) => {
     state.incomes.push(income);
@@ -171,7 +179,8 @@ function createExpense(payload, user) {
     amount: Number(payload.amount) || 0,
     linkedIncomeId: payload.linkedIncomeId || null,
     notes: payload.notes || '',
-    createdById: user.id
+    createdById: user.id,
+    invoiceNumber: generateInvoiceNumber(payload.date)
   };
   mutateStore((state) => {
     state.expenses.push(expense);

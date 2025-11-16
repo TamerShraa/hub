@@ -1,4 +1,19 @@
 :root {
+  --bg: #f4f6fb;
+  --panel: #ffffff;
+  --panel-alt: #f0f2f8;
+  --text: #0f172a;
+  --muted: #475569;
+  --accent: #0ea5e9;
+  --accent-strong: #0284c7;
+  --danger: #b91c1c;
+  --border: rgba(15, 23, 42, 0.12);
+  --card-shadow: 0 15px 35px rgba(15, 23, 42, 0.08);
+  --app-gradient: radial-gradient(circle at top, rgba(14, 165, 233, 0.08), transparent 45%), #f8fafc;
+  font-family: 'Space Grotesk', sans-serif;
+}
+
+[data-theme='dark'] {
   --bg: #05060a;
   --panel: #10121a;
   --panel-alt: #171a24;
@@ -9,7 +24,7 @@
   --danger: #ef4444;
   --border: rgba(255, 255, 255, 0.08);
   --card-shadow: 0 10px 40px rgba(3, 4, 8, 0.6);
-  font-family: 'Space Grotesk', sans-serif;
+  --app-gradient: radial-gradient(circle at top, rgba(56, 189, 248, 0.15), transparent 45%), #05060a;
 }
 
 * {
@@ -18,9 +33,10 @@
 
 body {
   margin: 0;
-  background: radial-gradient(circle at top, rgba(56, 189, 248, 0.15), transparent 45%), var(--bg);
+  background: var(--app-gradient);
   color: var(--text);
   min-height: 100vh;
+  transition: background 0.3s ease, color 0.3s ease;
 }
 
 #app {
@@ -91,6 +107,11 @@ body {
   margin-top: 0.5rem;
 }
 
+.muted {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
 #dashboard {
   width: min(1200px, 100%);
 }
@@ -133,8 +154,9 @@ button.primary {
 
 button.secondary,
 .nav-button {
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(148, 163, 184, 0.2);
   color: var(--text);
+  border: 1px solid var(--border);
 }
 
 button.danger {
@@ -293,6 +315,10 @@ form select {
   padding: 0.75rem;
 }
 
+.text-right {
+  text-align: right;
+}
+
 .filters.inline {
   align-items: flex-end;
 }
@@ -306,9 +332,10 @@ form select {
 .chip {
   border-radius: 999px;
   padding: 0.45rem 0.9rem;
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--panel-alt);
   color: var(--text);
   font-size: 0.85rem;
+  border: 1px solid var(--border);
 }
 
 .page-header {
@@ -383,13 +410,40 @@ td {
 }
 
 th {
-  background: rgba(255, 255, 255, 0.03);
+  background: rgba(15, 23, 42, 0.04);
   font-weight: 500;
   cursor: pointer;
 }
 
 tbody tr:nth-child(odd) {
-  background: rgba(255, 255, 255, 0.01);
+  background: rgba(15, 23, 42, 0.02);
+}
+
+.table-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.invoice-pill {
+  background: rgba(14, 165, 233, 0.15);
+  color: var(--accent);
+  padding: 0.1rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
+}
+
+.ghost-button {
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--accent);
+  padding: 0.35rem 0.7rem;
+  border-radius: 10px;
+  font-size: 0.85rem;
+}
+
+.ghost-button:hover {
+  border-color: var(--accent);
 }
 
 .field-error {
@@ -426,6 +480,83 @@ tbody tr:nth-child(odd) {
 
 #backup-btn {
   width: auto;
+}
+
+.modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(5, 6, 10, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  z-index: 1000;
+}
+
+.modal-card {
+  width: min(640px, 100%);
+  background: var(--panel);
+  border-radius: 24px;
+  padding: 1.5rem;
+  border: 1px solid var(--border);
+  box-shadow: var(--card-shadow);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 1.5rem;
+}
+
+.icon-button {
+  background: transparent;
+  border: none;
+  font-size: 1.5rem;
+  color: var(--text);
+  cursor: pointer;
+}
+
+#invoice-content {
+  display: grid;
+  gap: 1rem;
+}
+
+.invoice-header {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.invoice-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 0.75rem;
+}
+
+.invoice-field {
+  background: var(--panel-alt);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 0.75rem;
+}
+
+.invoice-field span {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--muted);
+  margin-bottom: 0.2rem;
+}
+
+.invoice-field strong {
+  font-size: 1rem;
 }
 
 @media (max-width: 768px) {

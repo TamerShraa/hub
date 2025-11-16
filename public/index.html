@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -44,6 +44,7 @@
             <p id="welcome"></p>
           </div>
           <div class="header-actions">
+            <button id="theme-toggle" class="nav-button" type="button">Toggle theme</button>
             <button id="nav-home" class="nav-button">Pages</button>
             <button id="nav-my-work" class="nav-button">My Work</button>
             <button id="nav-payout" class="nav-button">Payout Summary</button>
@@ -157,6 +158,18 @@
             </div>
           </section>
         </main>
+      </div>
+      <div id="invoice-modal" class="modal hidden">
+        <div class="modal-card">
+          <div class="modal-header">
+            <h3>Invoice preview</h3>
+            <button id="invoice-close" class="icon-button" aria-label="Close invoice">&times;</button>
+          </div>
+          <div id="invoice-content"></div>
+          <div class="modal-actions">
+            <button id="invoice-pdf" class="primary" type="button">Export as PDF</button>
+          </div>
+        </div>
       </div>
     </div>
     <script src="/app.js"></script>

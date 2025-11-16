@@ -8,6 +8,8 @@ A dependency-free Node.js application that tracks revenues, expenses, commission
 - **Role-aware security** using salted `scrypt` hashing, configurable session windows, HttpOnly + SameSite cookies, and forced password rotation on first login.
 - **Four isolated ledgers** (SSTDA, Tamer Personal, Majdi Personal, Research Work) with tagging for source & product type plus linked direct expenses.
 - **Professional UI** featuring a global dashboard, quick filter presets, inline validation, sortable tables, payout summary, and richer “My Work” insights.
+- **Invoice-ready workflows** with sequential Smart Summit invoice numbers, printable PDF exports, and branded previews for every income or expense entry.
+- **Personal theme toggle** so each teammate can switch between light and dark modes with preferences remembered per browser.
 - **Finance automation** for commissions, research splits, personal page profits, SSTDA weekly close, and per-person payout exports.
 - **Resilience tooling** including on-demand + scheduled JSON backups and a Node test suite that validates core money logic.
 

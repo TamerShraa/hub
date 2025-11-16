@@ -54,6 +54,7 @@ function createDefaultStore() {
     lastIncomeId: 0,
     lastExpenseId: 0,
     lastDistributionId: 0,
+    lastInvoiceNumber: 0,
     users: DEFAULT_USERS.map((user) => ({ ...user, passwordHash: password, mustChangePassword: true })),
     incomes: [],
     expenses: [],
@@ -73,6 +74,11 @@ function ensureDataFile() {
   const upgraded = upgradeStore(raw);
   store = upgraded;
   persistStore();
+}
+
+function formatInvoiceNumber(counter, date) {
+  const year = date && !Number.isNaN(Date.parse(date)) ? new Date(date).getFullYear() : new Date().getFullYear();
+  return `INV-${year}-${String(counter).padStart(4, '0')}`;
 }
 
 function upgradeStore(data) {
@@ -107,12 +113,24 @@ function upgradeStore(data) {
     }
     return next;
   });
-  clone.incomes = (clone.incomes || []).map((income) => ({
-    source: 'Direct',
-    productType: 'Recorded',
-    ...income
-  }));
-  clone.expenses = clone.expenses || [];
+  if (typeof clone.lastInvoiceNumber !== 'number') {
+    clone.lastInvoiceNumber = 0;
+    dirty = true;
+  }
+  const ensureInvoiceNumber = (record) => {
+    if (record.invoiceNumber) return record;
+    clone.lastInvoiceNumber += 1;
+    dirty = true;
+    return { ...record, invoiceNumber: formatInvoiceNumber(clone.lastInvoiceNumber, record.date) };
+  };
+  clone.incomes = (clone.incomes || []).map((income) =>
+    ensureInvoiceNumber({
+      source: 'Direct',
+      productType: 'Recorded',
+      ...income
+    })
+  );
+  clone.expenses = (clone.expenses || []).map((expense) => ensureInvoiceNumber(expense));
   clone.weeklyDistributions = clone.weeklyDistributions || [];
   if (typeof clone.lastIncomeId !== 'number') clone.lastIncomeId = 0;
   if (typeof clone.lastExpenseId !== 'number') clone.lastExpenseId = 0;
@@ -179,6 +197,13 @@ function generateDistributionId() {
   return `dist_${current.lastDistributionId}`;
 }
 
+function generateInvoiceNumber(date) {
+  const current = loadStore();
+  current.lastInvoiceNumber += 1;
+  persistStore();
+  return formatInvoiceNumber(current.lastInvoiceNumber, date);
+}
+
 module.exports = {
   loadStore,
   mutateStore,
@@ -188,6 +213,7 @@ module.exports = {
   generateIncomeId,
   generateExpenseId,
   generateDistributionId,
+  generateInvoiceNumber,
   DATA_PATH,
   BACKUP_DIR,
   DEFAULT_SETTINGS
