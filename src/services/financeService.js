@@ -45,6 +45,24 @@ function filterRecords(records, { start, end, category, broughtBy, search, sourc
   });
 }
 
+function normalizePaymentsFromPayload(payload, fallbackDate) {
+  const candidates = Array.isArray(payload.payments) ? payload.payments : [];
+  const parsed = candidates
+    .map((payment) => ({
+      amount: Number(payment.amount) || 0,
+      date: payment.date || fallbackDate
+    }))
+    .filter((payment) => payment.amount > 0);
+  if (parsed.length) {
+    return { payments: parsed, total: sum(parsed, (item) => item.amount) };
+  }
+  const fallbackAmount = Number(payload.amount) || 0;
+  if (fallbackAmount > 0) {
+    return { payments: [{ amount: fallbackAmount, date: fallbackDate }], total: fallbackAmount };
+  }
+  throw new Error('At least one payment is required');
+}
+
 function buildPageSummary(pageId, filters = {}) {
   const store = loadStore();
   const page = getPage(pageId);
@@ -113,6 +131,9 @@ function userCanDelete(user) {
 function createIncome(payload, user) {
   const page = getPage(payload.pageId);
   if (!page) throw new Error('Invalid page');
+  if (!payload.date) throw new Error('Date is required');
+  if (!payload.category) throw new Error('Category is required');
+  const paymentInfo = normalizePaymentsFromPayload(payload, payload.date);
   const store = loadStore();
   const income = {
     id: generateIncomeId(),
@@ -121,7 +142,8 @@ function createIncome(payload, user) {
     category: payload.category,
     source: payload.source || 'Direct',
     productType: payload.productType || 'Recorded',
-    amount: Number(payload.amount) || 0,
+    amount: paymentInfo.total,
+    payments: paymentInfo.payments,
     clientName: payload.clientName || '',
     broughtById: payload.broughtById || null,
     notes: payload.notes || '',
@@ -142,15 +164,19 @@ function updateIncome(incomeId, payload, user) {
   mutateStore((state) => {
     const target = state.incomes.find((item) => item.id === incomeId);
     Object.assign(target, {
-      date: payload.date,
-      category: payload.category,
-      amount: Number(payload.amount) || 0,
+      date: payload.date || target.date,
+      category: payload.category || target.category,
       clientName: payload.clientName || '',
       broughtById: payload.broughtById || null,
       source: payload.source || target.source,
       productType: payload.productType || target.productType,
       notes: payload.notes || ''
     });
+    if (Array.isArray(payload.payments) || typeof payload.amount !== 'undefined') {
+      const paymentInfo = normalizePaymentsFromPayload(payload, target.date);
+      target.payments = paymentInfo.payments;
+      target.amount = paymentInfo.total;
+    }
   });
   return loadStore().incomes.find((item) => item.id === incomeId);
 }

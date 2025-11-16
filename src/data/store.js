@@ -123,12 +123,33 @@ function upgradeStore(data) {
     dirty = true;
     return { ...record, invoiceNumber: formatInvoiceNumber(clone.lastInvoiceNumber, record.date) };
   };
+  const ensurePayments = (record) => {
+    const normalized = Array.isArray(record.payments)
+      ? record.payments
+      : [{ amount: Number(record.amount) || 0, date: record.date }];
+    const payments = normalized
+      .map((payment) => ({
+        amount: Number(payment.amount) || 0,
+        date: payment.date || record.date
+      }))
+      .filter((payment) => payment.amount > 0);
+    if (!payments.length) {
+      payments.push({ amount: Number(record.amount) || 0, date: record.date });
+    }
+    const total = payments.reduce((sum, payment) => sum + payment.amount, 0);
+    if (!record.payments || payments.length !== record.payments.length || Math.abs(total - Number(record.amount || 0)) > 0.005) {
+      dirty = true;
+    }
+    return { ...record, payments, amount: total };
+  };
   clone.incomes = (clone.incomes || []).map((income) =>
-    ensureInvoiceNumber({
-      source: 'Direct',
-      productType: 'Recorded',
-      ...income
-    })
+    ensurePayments(
+      ensureInvoiceNumber({
+        source: 'Direct',
+        productType: 'Recorded',
+        ...income
+      })
+    )
   );
   clone.expenses = (clone.expenses || []).map((expense) => ensureInvoiceNumber(expense));
   clone.weeklyDistributions = clone.weeklyDistributions || [];

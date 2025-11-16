@@ -101,6 +101,12 @@ body {
   margin-top: 0;
 }
 
+.micro-contact {
+  margin: 0.15rem 0;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
 .error {
   color: var(--danger);
   min-height: 1.5rem;
@@ -452,6 +458,69 @@ tbody tr:nth-child(odd) {
   color: var(--danger);
 }
 
+.payment-section {
+  margin: 1rem 0;
+  padding: 1rem;
+  border-radius: 16px;
+  border: 1px dashed var(--border);
+  background: var(--panel-alt);
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.payment-section-header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.payment-section-header h4 {
+  margin: 0;
+}
+
+.payment-total {
+  font-weight: 600;
+  color: var(--accent-strong);
+}
+
+.payment-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.75rem;
+}
+
+.payment-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.payment-chip {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 0.35rem 0.5rem;
+  border-radius: 12px;
+  border: 1px solid rgba(14, 165, 233, 0.3);
+  background: rgba(14, 165, 233, 0.1);
+}
+
+.payment-chip span {
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.payment-chip strong {
+  font-size: 0.95rem;
+}
+
+.payment-chip small {
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
 #my-work table,
 #payout-summary table,
 #settings table {
@@ -535,6 +604,13 @@ tbody tr:nth-child(odd) {
   gap: 0.5rem;
 }
 
+.invoice-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.35rem;
+}
+
 .invoice-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -557,6 +633,79 @@ tbody tr:nth-child(odd) {
 
 .invoice-field strong {
   font-size: 1rem;
+}
+
+.invoice-schedule {
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 1rem;
+  background: var(--panel-alt);
+}
+
+.invoice-schedule-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.invoice-schedule ul {
+  list-style: none;
+  margin: 0.75rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.invoice-schedule li {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding-bottom: 0.4rem;
+  border-bottom: 1px dashed var(--border);
+  flex-wrap: wrap;
+}
+
+.invoice-schedule li:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.invoice-schedule li small {
+  color: var(--muted);
+}
+
+.invoice-notes {
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 1rem;
+  background: var(--panel-alt);
+}
+
+.invoice-notes span {
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.invoice-notes p {
+  margin: 0.25rem 0 0;
+}
+
+.invoice-footer {
+  text-align: center;
+}
+
+.app-footer {
+  margin-top: 1.5rem;
+  text-align: center;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.app-footer p {
+  margin: 0.15rem 0;
 }
 
 @media (max-width: 768px) {

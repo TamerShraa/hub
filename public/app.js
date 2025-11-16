@@ -337,8 +337,24 @@ function renderPageDetail(data, filters = {}) {
               .join('')}</select></label>
             <label>Source<select name="source">${INCOME_SOURCES.map((item) => `<option value="${item}">${item}</option>`).join('')}</select></label>
             <label>Product type<select name="productType">${PRODUCT_TYPES.map((item) => `<option value="${item}">${item}</option>`).join('')}</select></label>
-            <label>Amount<input type="number" step="0.01" name="amount" required></label>
-            <div class="field-error" data-for="amount"></div>
+            <div class="payment-section">
+              <div class="payment-section-header">
+                <h4>Payment schedule</h4>
+                <p>Capture up to four installments. Leave extras blank.</p>
+                <div class="payment-total">Total <span id="payment-total">0.00 JD</span></div>
+              </div>
+              ${[1, 2, 3, 4]
+                .map(
+                  (slot) => `
+                    <div class="payment-row">
+                      <label>Payment ${slot} amount<input type="number" step="0.01" name="payment${slot}Amount" data-payment-amount></label>
+                      <label>Payment ${slot} date<input type="date" name="payment${slot}Date"></label>
+                    </div>
+                  `
+                )
+                .join('')}
+            </div>
+            <div class="field-error" data-for="payments"></div>
             <label>Client<input type="text" name="clientName"></label>
             <label>Brought by<select name="broughtById"><option value="">Select member</option>${userOptions}</select></label>
             <label>Notes<textarea name="notes" rows="2"></textarea></label>
@@ -389,6 +405,7 @@ function renderPageDetail(data, filters = {}) {
   });
   document.getElementById('income-form').addEventListener('submit', handleIncomeSubmit);
   document.getElementById('expense-form').addEventListener('submit', handleExpenseSubmit);
+  attachPaymentWatcher(document.getElementById('income-form'));
   document.getElementById('jump-add-income').addEventListener('click', () => document.getElementById('income-form').scrollIntoView({ behavior: 'smooth' }));
   document.getElementById('jump-add-expense').addEventListener('click', () => document.getElementById('expense-form').scrollIntoView({ behavior: 'smooth' }));
   attachSorting();
@@ -411,6 +428,7 @@ function renderIncomeTable(incomes, userMap) {
           <th data-table="incomes" data-column="netAmount">Net</th>
           <th>Client</th>
           <th>Brought by</th>
+          <th>Payments</th>
           <th>Invoice</th>
         </tr>
       </thead>
@@ -428,6 +446,9 @@ function renderIncomeTable(incomes, userMap) {
                 <td>${income.clientName || '-'}</td>
                 <td>${income.broughtById ? userMap[income.broughtById] || '—' : '—'}</td>
                 <td>
+                  <div class="payment-list">${renderPaymentBreakdown(income)}</div>
+                </td>
+                <td>
                   <div class="table-actions">
                     <span class="invoice-pill">${income.invoiceNumber}</span>
                     <button type="button" class="ghost-button invoice-btn" data-type="income" data-id="${income.id}">View</button>
@@ -440,6 +461,21 @@ function renderIncomeTable(incomes, userMap) {
       </tbody>
     </table>
   `;
+}
+
+function renderPaymentBreakdown(income) {
+  const payments = income.payments && income.payments.length ? income.payments : [{ amount: income.amount, date: income.date }];
+  return payments
+    .map(
+      (payment, index) => `
+        <div class="payment-chip">
+          <span>Part ${index + 1}</span>
+          <strong>${Number(payment.amount || 0).toFixed(2)} JD</strong>
+          <small>${escapeHtml(payment.date || 'N/A')}</small>
+        </div>
+      `
+    )
+    .join('');
 }
 
 function renderExpenseTable(expenses) {
@@ -518,23 +554,68 @@ async function handleIncomeSubmit(event) {
   event.preventDefault();
   const form = event.target;
   const formData = new FormData(form);
-  const payload = Object.fromEntries(formData.entries());
-  payload.pageId = state.activePage;
+  const payload = {
+    date: formData.get('date'),
+    category: formData.get('category'),
+    source: formData.get('source'),
+    productType: formData.get('productType'),
+    clientName: formData.get('clientName'),
+    broughtById: formData.get('broughtById'),
+    notes: formData.get('notes'),
+    pageId: state.activePage
+  };
+  const payments = collectPayments(formData, payload.date);
   const errors = {};
   if (!payload.date) errors.date = 'Date is required';
-  if (!payload.amount) errors.amount = 'Amount is required';
+  if (!payments.length) errors.payments = 'Add at least one payment amount';
   showFieldErrors(form, errors);
   if (Object.keys(errors).length) return;
+  const totalAmount = payments.reduce((sum, payment) => sum + payment.amount, 0);
+  payload.payments = payments;
+  payload.amount = totalAmount;
   try {
     await request('/api/incomes', {
       method: 'POST',
       body: JSON.stringify(payload)
     });
     form.reset();
+    updatePaymentTotal(form);
     openPage(state.activePage, state.currentFilters[state.activePage] || {});
   } catch (err) {
     alert(err.message);
   }
+}
+
+function collectPayments(formData, fallbackDate) {
+  const payments = [];
+  for (let index = 1; index <= 4; index += 1) {
+    const amount = Number(formData.get(`payment${index}Amount`));
+    const date = formData.get(`payment${index}Date`) || fallbackDate;
+    if (amount && amount > 0) {
+      payments.push({ amount, date });
+    }
+  }
+  return payments;
+}
+
+function updatePaymentTotal(form) {
+  if (!form) return;
+  const display = form.querySelector('#payment-total');
+  if (!display) return;
+  const total = [...form.querySelectorAll('[data-payment-amount]')].reduce((sum, input) => {
+    const value = Number(input.value);
+    return sum + (Number.isNaN(value) ? 0 : value);
+  }, 0);
+  display.textContent = `${total.toFixed(2)} JD`;
+}
+
+function attachPaymentWatcher(form) {
+  if (!form) return;
+  const inputs = form.querySelectorAll('[data-payment-amount]');
+  inputs.forEach((input) => {
+    input.addEventListener('input', () => updatePaymentTotal(form));
+  });
+  updatePaymentTotal(form);
 }
 
 async function handleExpenseSubmit(event) {
@@ -739,15 +820,53 @@ function renderInvoicePreview(invoice) {
   const content = document.getElementById('invoice-content');
   document.getElementById('invoice-pdf').dataset.type = invoice.type;
   document.getElementById('invoice-pdf').dataset.id = invoice.id;
+  const title = invoice.type === 'income' ? 'Income Invoice' : 'Expense Report';
+  const phones = Array.isArray(invoice.company.phones)
+    ? invoice.company.phones.join(' • ')
+    : invoice.company.phone;
+  const totalReceived = typeof invoice.totalAmount === 'number' ? invoice.totalAmount : invoice.amount;
+  const schedule = invoice.type === 'income'
+    ? `
+        <div class="invoice-schedule">
+          <div class="invoice-schedule-header">
+            <h4>Payment schedule</h4>
+            <span>Total received: ${Number(totalReceived || 0).toFixed(2)} ${escapeHtml(invoice.currency)}</span>
+          </div>
+          <ul>
+            ${invoice.payments
+              .map(
+                (payment, index) => `
+                  <li>
+                    <span>Payment ${index + 1}</span>
+                    <strong>${Number(payment.amount || 0).toFixed(2)} ${escapeHtml(invoice.currency)}</strong>
+                    <small>${escapeHtml(payment.date || 'N/A')}</small>
+                  </li>
+                `
+              )
+              .join('')}
+          </ul>
+        </div>
+      `
+    : `
+        <div class="invoice-schedule">
+          <div class="invoice-schedule-header">
+            <h4>Amount</h4>
+            <span>${invoice.amount.toFixed(2)} ${escapeHtml(invoice.currency)}</span>
+          </div>
+        </div>
+      `;
   content.innerHTML = `
     <div class="invoice-header">
       <div>
         <h4>${escapeHtml(invoice.company.name)}</h4>
+        <p>${escapeHtml(invoice.company.description)}</p>
         <p>${escapeHtml(invoice.company.address)}</p>
-        <p>${escapeHtml(invoice.company.phone)} · ${escapeHtml(invoice.company.email)}</p>
+        <p>${escapeHtml(phones)}</p>
+        <p>${escapeHtml(invoice.company.email)}</p>
       </div>
-      <div class="text-right">
-        <div class="invoice-pill">${escapeHtml(invoice.invoiceNumber)}</div>
+      <div class="invoice-meta">
+        <span class="invoice-pill">${escapeHtml(title)}</span>
+        <p>${escapeHtml(invoice.invoiceNumber)}</p>
         <p>${escapeHtml(invoice.date)}</p>
       </div>
     </div>
@@ -756,15 +875,15 @@ function renderInvoicePreview(invoice) {
       <div class="invoice-field"><span>Page</span><strong>${escapeHtml(invoice.pageLabel)}</strong></div>
       <div class="invoice-field"><span>Party</span><strong>${escapeHtml(invoice.partyName)}</strong></div>
       <div class="invoice-field"><span>Category</span><strong>${escapeHtml(invoice.category)}</strong></div>
-      <div class="invoice-field"><span>Amount</span><strong>${invoice.amount.toFixed(2)} ${escapeHtml(invoice.currency)}</strong></div>
       <div class="invoice-field"><span>Payment method</span><strong>${escapeHtml(invoice.paymentMethod)}</strong></div>
       <div class="invoice-field"><span>Linked deal</span><strong>${escapeHtml(invoice.linkedIncomeId || '—')}</strong></div>
     </div>
-    <div class="invoice-field">
+    ${schedule}
+    <div class="invoice-notes">
       <span>Notes</span>
-      <strong>${escapeHtml(invoice.notes || 'No additional notes recorded.')}</strong>
+      <p>${escapeHtml(invoice.notes || 'No additional notes recorded.')}</p>
     </div>
-    <p class="muted">This invoice was generated by Smart Summit Finance System – SSTDA.</p>
+    <p class="muted invoice-footer">This invoice was generated by Smart Summit Finance System – SSTDA.</p>
   `;
 }
 
